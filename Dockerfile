@@ -2,9 +2,11 @@ FROM docker.io/library/node:18@sha256:d0bbfdbad0bff8253e6159dcbee42141db4fc30936
 
 WORKDIR /headlamp-plugins
 
-COPY ./ /headlamp-plugins/
+COPY ./flux-plugin /headlamp-plugins/flux-plugin
 
 RUN mkdir -p /headlamp-plugins/build
+
+RUN cd /headlamp-plugins/flux-plugin && npm install
 
 # Build the plugin
 RUN npx @kinvolk/headlamp-plugin build /headlamp-plugins
