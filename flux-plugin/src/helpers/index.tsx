@@ -1,4 +1,12 @@
 import { KubeObject } from '@kinvolk/headlamp-plugin/lib/lib/k8s/cluster';
+import { KubeEvent } from '@kinvolk/headlamp-plugin/lib/k8s/event';
+import {
+  HoverInfoLabel,
+  SectionBox,
+  ShowHideLabel,
+  SimpleTable,
+} from '@kinvolk/headlamp-plugin/lib/components/common';
+import { localeDate, timeAgo } from '@kinvolk/headlamp-plugin/lib/Utils';
 
 export function getSourceNameAndType(item: KubeObject) {
   const itemKind = item.jsonData.kind;
@@ -45,4 +53,79 @@ export function getSourceNameAndType(item: KubeObject) {
     }
   }
   return { name, type };
+}
+
+export function ObjectEvents(props: { events: any }) {
+  const { events } = props;
+  if (!events) {
+    return null;
+  }
+  return (
+    <SectionBox title={'Events'}>
+      <SimpleTable
+        defaultSortingColumn={4}
+        columns={[
+          {
+            label: 'type',
+            getter: item => {
+              return item.type;
+            },
+          },
+          {
+            label: 'Reason',
+            getter: item => {
+              return item.reason;
+            },
+          },
+          {
+            label: 'From',
+            getter: item => {
+              return item.source.component;
+            },
+          },
+          {
+            label: 'Message',
+            getter: item => {
+              return (
+                item && (
+                  <ShowHideLabel labelId={item?.metadata?.uid || ''}>
+                    {item.message || ''}
+                  </ShowHideLabel>
+                )
+              );
+            },
+          },
+          {
+            label: 'Age',
+            getter: item => {
+              if (item.count > 1) {
+                return `${timeAgo(item.lastOccurrence)} (${item.count} times over ${timeAgo(
+                  item.firstOccurrence
+                )})`;
+              }
+              const eventDate = timeAgo(item.lastOccurrence, { format: 'mini' });
+              let label: string;
+              if (item.count > 1) {
+                label = `${eventDate} ${item.count} times since ${timeAgo(item.firstOccurrence)}`;
+              } else {
+                label = eventDate;
+              }
+
+              return (
+                <HoverInfoLabel
+                  label={label}
+                  hoverInfo={localeDate(item.lastOccurrence)}
+                  icon="mdi:calendar"
+                />
+              );
+            },
+            sort: (n1: KubeEvent, n2: KubeEvent) => {
+              return new Date(n2.lastTimestamp).getTime() - new Date(n1.lastTimestamp).getTime();
+            },
+          },
+        ]}
+        data={events}
+      />
+    </SectionBox>
+  );
 }
